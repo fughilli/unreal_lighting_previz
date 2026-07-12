@@ -1,0 +1,14 @@
+# Root package: expose the Cargo manifest/lockfile to crate_universe.
+exports_files([
+    "Cargo.toml",
+    "Cargo.lock",
+])
+
+# Convenience alias so you can `bazel run //:receiver -- --config configs/...`.
+# The binary resolves relative paths against BUILD_WORKING_DIRECTORY, so config
+# paths work the same whether run via `bazel run` or the built binary directly.
+alias(
+    name = "receiver",
+    actual = "//receiver:previz-receiver",
+    visibility = ["//visibility:public"],
+)

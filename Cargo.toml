@@ -1,0 +1,17 @@
+[package]
+name = "previz-receiver"
+version = "0.1.0"
+edition = "2021"
+
+# This Cargo.toml exists so rules_rust's crate_universe can resolve third-party
+# crates from a single Cargo.lock. The build of record is Bazel (see BUILD
+# files); `cargo` is only used to regenerate Cargo.lock.
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+libc = "0.2"
+
+[[bin]]
+name = "previz-receiver"
+path = "receiver/src/main.rs"

@@ -1,0 +1,36 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+rust_library(
+    name = "previz_receiver",
+    srcs = [
+        "src/artnet.rs",
+        "src/config.rs",
+        "src/lib.rs",
+        "src/shmem.rs",
+        "src/volume.rs",
+    ],
+    crate_name = "previz_receiver",
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rust_binary(
+    name = "previz-receiver",
+    srcs = ["src/main.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [":previz_receiver"],
+)
+
+# Runs the in-crate #[cfg(test)] unit tests for all modules
+# (config / artnet / volume / shmem).
+rust_test(
+    name = "previz_receiver_test",
+    crate = ":previz_receiver",
+    edition = "2021",
+)

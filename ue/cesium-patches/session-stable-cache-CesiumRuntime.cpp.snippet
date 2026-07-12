@@ -1,0 +1,89 @@
+// Napa previz: make the request cache persist across editor restarts for Google
+// Photorealistic 3D Tiles. Google mints a new "session" token each run, and it
+// lives in the tile URL (.../files/<id>?session=...&key=...). CachingAssetAccessor
+// keys by URL, so a new session = new key = cache miss on every restart even
+// though the file <id> is stable. These two wrappers straddle the caching layer:
+//  - StripSessionAccessor removes the ?query from session-bearing URLs so the
+//    cache key is session-independent, stashing the query in a header.
+//  - RestoreSessionAccessor re-appends that query before the real HTTP request.
+// URLs without "session=" (e.g. root.json) are untouched, so each run still
+// fetches a fresh, valid session for any genuinely-new tiles.
+constexpr char kSessionQueryHeader[] = "X-Cesium-Cache-Session-Query";
+
+class StripSessionAccessor : public CesiumAsync::IAssetAccessor {
+public:
+  explicit StripSessionAccessor(
+      std::shared_ptr<CesiumAsync::IAssetAccessor> inner)
+      : _inner(std::move(inner)) {}
+
+  CesiumAsync::Future<std::shared_ptr<CesiumAsync::IAssetRequest>> get(
+      const CesiumAsync::AsyncSystem& asyncSystem,
+      const std::string& url,
+      const std::vector<THeader>& headers) override {
+    const auto q = url.find('?');
+    if (q != std::string::npos && url.find("session=", q) != std::string::npos) {
+      std::vector<THeader> h = headers;
+      h.emplace_back(kSessionQueryHeader, url.substr(q + 1));
+      return _inner->get(asyncSystem, url.substr(0, q), h);
+    }
+    return _inner->get(asyncSystem, url, headers);
+  }
+
+  CesiumAsync::Future<std::shared_ptr<CesiumAsync::IAssetRequest>> request(
+      const CesiumAsync::AsyncSystem& asyncSystem,
+      const std::string& verb,
+      const std::string& url,
+      const std::vector<THeader>& headers,
+      const std::span<const std::byte>& contentPayload) override {
+    return _inner->request(asyncSystem, verb, url, headers, contentPayload);
+  }
+
+  void tick() noexcept override { _inner->tick(); }
+
+private:
+  std::shared_ptr<CesiumAsync::IAssetAccessor> _inner;
+};
+
+class RestoreSessionAccessor : public CesiumAsync::IAssetAccessor {
+public:
+  explicit RestoreSessionAccessor(
+      std::shared_ptr<CesiumAsync::IAssetAccessor> inner)
+      : _inner(std::move(inner)) {}
+
+  CesiumAsync::Future<std::shared_ptr<CesiumAsync::IAssetRequest>> get(
+      const CesiumAsync::AsyncSystem& asyncSystem,
+      const std::string& url,
+      const std::vector<THeader>& headers) override {
+    std::string query;
+    std::vector<THeader> pass;
+    pass.reserve(headers.size());
+    for (const THeader& h : headers) {
+      if (h.first == kSessionQueryHeader) {
+        query = h.second;
+      } else {
+        pass.push_back(h);
+      }
+    }
+    if (!query.empty()) {
+      return _inner->get(asyncSystem, url + "?" + query, pass);
+    }
+    return _inner->get(asyncSystem, url, headers);
+  }
+
+  CesiumAsync::Future<std::shared_ptr<CesiumAsync::IAssetRequest>> request(
+      const CesiumAsync::AsyncSystem& asyncSystem,
+      const std::string& verb,
+      const std::string& url,
+      const std::vector<THeader>& headers,
+      const std::span<const std::byte>& contentPayload) override {
+    return _inner->request(asyncSystem, verb, url, headers, contentPayload);
+  }
+
+  void tick() noexcept override { _inner->tick(); }
+
+private:
+  std::shared_ptr<CesiumAsync::IAssetAccessor> _inner;
+};
+} // namespace
+
+const std::shared_ptr<CesiumAsync::IAssetAccessor>& getAssetAccessor() {

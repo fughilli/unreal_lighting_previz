@@ -1,0 +1,20 @@
+# Bazel (output_base is redirected into build_cache/ via .bazelrc)
+build_cache/
+bazel-*
+
+# Rust / Cargo
+target/
+
+# Unreal Engine generated dirs (plugin builds under ue/NapaPreviz)
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+*.xcworkspace/
+*.xcodeproj/
+
+# macOS
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json

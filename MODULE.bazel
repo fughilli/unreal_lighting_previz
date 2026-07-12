@@ -1,0 +1,37 @@
+###############################################################################
+# Napa Lighted Art Festival — previz
+#
+# Self-contained Bazel module for the previsualization tooling. The first
+# artifact is the *volume receiver*: a loopback Art-Net sidecar that reassembles
+# the ~56k-voxel volume and publishes it to POSIX shared memory for Unreal.
+#
+# Conventions mirror the companion repo ~/Projects/artnet-tester (Bazel 7.4.0,
+# rules_rust 0.61.0) so the two projects stay easy to cross-reference.
+###############################################################################
+module(
+    name = "napa-previz",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_rust", version = "0.61.0")
+
+# --- Rust toolchain -----------------------------------------------------------
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.86.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# --- Third-party crates (serde_json + libc) -----------------------------------
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(crate, "crates")

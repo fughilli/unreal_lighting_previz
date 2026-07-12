@@ -1,0 +1,2 @@
+# Keep Bazel's working state out of the source tree (mirrors artnet-tester).
+startup --output_base=build_cache
