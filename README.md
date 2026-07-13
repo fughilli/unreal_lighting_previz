@@ -254,7 +254,10 @@ plaza). A thin tool sets the `GlobeAnchor` to that lat/long plus **[OPEN]** the
 **altitude** of the hang point (top of the 21 m volume, or its base 3 m above grade —
 need to fix the datum) and the **heading** of the 20×20 cross-section (which horizontal
 axis faces which compass bearing — drives how the curtains present to viewers), and
-aligns local photogrammetry to the Cesium context.
+aligns local photogrammetry to the Cesium context. *Current previz working values
+(eyeballed on the streamed tiles, 2026-07-13, baked into `ue/scripts/`): base
+1 m above local grade (z=100 cm), yaw **-127°** to align with the corridor —
+confirm both against the real survey before Phase 3.*
 
 ---
 
