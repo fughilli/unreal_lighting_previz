@@ -52,13 +52,23 @@ Caching is NOT a source patch — it's config in `DefaultEngine.ini`
 
 6. **Geometric-normal override** — asset edit, not source: on
    `/CesiumForUnreal/Materials/M_CesiumBaseMaterial`, set **Tangent Space
-   Normal = false** and feed the Normal input from a Custom node computing
+   Normal = false** and override the Normal *inside the material-attributes
+   chain*: the material has `use_material_attributes = true`, so the root
+   Normal pin is silently ignored — the override must be spliced between the
+   MaterialAttributeLayers node and the output as
+   `layers → BreakMaterialAttributes → MakeMaterialAttributes → output`,
+   with every attribute passed straight through except Normal, which comes
+   from a Custom node computing
    `n = normalize(cross(ddy(WP), ddx(WP))); n *= sign(dot(n, Cam));`
-   (inputs: WorldPosition as `WP`, CameraVectorWS as `Cam`). Google
-   Photorealistic tiles have unusable vertex normals (World Normal buffer shows
-   the whole mesh as one color), so facades go black above any light's height
-   (`N·L < 0`). This replaces the shading normal with the true per-pixel
-   geometric normal, camera-oriented so front-facing pixels always get an
-   outward normal. Lighting becomes per-triangle flat, which is invisible on
-   night photogrammetry. Re-apply after a Cesium reinstall (it's in the
-   plugin's Content).
+   (inputs: WorldPosition as `WP`, CameraVectorWS as `Cam`; Break's input pin
+   is named `Attr`). Why: Google Photorealistic tiles have unusable vertex
+   normals (World Normal buffer shows the whole mesh as one color), so facades
+   go black above any light's height (`N·L < 0`). The geometric normal is
+   camera-oriented so front-facing pixels always get an outward normal;
+   lighting becomes per-triangle flat, invisible on night photogrammetry.
+   Re-apply after a Cesium reinstall (it's in the plugin's Content).
+   Gotcha for scripted re-apply: configuring a `SetMaterialAttributes` node's
+   `attribute_set_types` from Python **crashes the editor** (its post-edit
+   handler asserts) — use Break/Make instead. A first, non-functional attempt
+   also left orphan WorldPosition/CameraVectorWS/Custom nodes wired to the
+   ignored root Normal pin; they're harmless.
