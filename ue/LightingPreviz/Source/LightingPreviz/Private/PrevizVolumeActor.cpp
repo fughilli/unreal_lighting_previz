@@ -1,4 +1,4 @@
-// Copyright Napa Lighted Art Festival previz.
+// Copyright the unreal_lighting_previz authors.
 #include "PrevizVolumeActor.h"
 
 #include "PrevizVolumeComponent.h"

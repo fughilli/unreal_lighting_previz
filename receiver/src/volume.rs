@@ -174,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn round_trip_napa_slice() {
+    fn round_trip_prod_slice() {
         // A few layers of the real 20x20x140 cross-section.
         round_trip(20, 20, 8);
     }

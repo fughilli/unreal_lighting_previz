@@ -1,5 +1,5 @@
 """
-Add the Napa site geometry (Google Photorealistic 3D Tiles via Cesium) to the
+Add the site geometry (Google Photorealistic 3D Tiles via Cesium) to the
 previz level, georeferenced at the hang anchor, and move the LED volume there.
 
 Run headless:
@@ -21,7 +21,7 @@ import unreal
 # ---- knobs -------------------------------------------------------------------
 HANG_LAT = 38.297189
 HANG_LON = -122.284700
-# Approx WGS84 *ellipsoidal* ground height at the Napa plaza (orthometric ~6 m
+# Approx WGS84 *ellipsoidal* ground height at the default site plaza (orthometric ~6 m
 # minus geoid ~ -32 m). This is a starting estimate — fine-tune visually so the
 # volume sits at plaza level (the altitude datum is an open question, README).
 ORIGIN_HEIGHT = -26.0

@@ -1,4 +1,4 @@
-//! Napa previz volume receiver.
+//! Previz volume receiver.
 //!
 //! A loopback Art-Net sidecar: it binds one UDP socket per virtual controller
 //! (per `artnet-tester`'s `config.json`), reassembles the ~56k-voxel volume

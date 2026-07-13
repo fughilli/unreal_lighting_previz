@@ -5,9 +5,8 @@ real-world 3D site geometry, places a virtual model of the light sculpture into 
 context, and renders the result in real time while being driven by the **live Art-Net
 feed** from the same controller that will run the physical piece.
 
-**First target:** the hanging volumetric LED installation for the Napa Lighted Art
-Festival — a voxel volume in the public plaza near the Historic Napa County Courthouse,
-rendered to video for design iteration and stakeholder review.
+**First target:** a hanging volumetric LED installation — a voxel volume suspended
+in a public plaza, rendered to video for design iteration and stakeholder review.
 
 > Status: proposal / request-for-comment. Nothing is built yet. Open questions are
 > flagged inline as **[OPEN]**.
@@ -29,11 +28,11 @@ ArtSync latch → shm publish → seqlock read back returned the correct voxels 
 seq counter correct) using `configs/dev_20x20x20.json`. *What's still unproven:* (a) the
 cross-check against the **actual** artnet-tester bazel sender / C++ `VolumetricDisplay`
 specifically (its bazel build was too slow to run headlessly here), and (b) the **UE
-reader** — steps 1 & 3. The UE plugin is written (`ue/NapaPreviz/`) but not yet compiled.
+reader** — steps 1 & 3. The UE plugin is written (`ue/LightingPreviz/`) but not yet compiled.
 
 **What's in `previz/` now:**
 - `MODULE.bazel`, `.bazelrc`, root + `receiver/BUILD.bazel`, `Cargo.toml`/`Cargo.lock` —
-  self-contained Bazel module (`napa-previz`), mirroring artnet-tester (Bazel 7.4.0,
+  self-contained Bazel module (`lighting-previz`), mirroring artnet-tester (Bazel 7.4.0,
   `rules_rust` 0.61.0). **Everything in this project is Bazel-managed.**
 - `receiver/src/` — `config.rs` (consumes artnet-tester `config.json`), `artnet.rs`
   (ArtDmx/ArtSync decode), `volume.rs` (universe→`(z,y,x)` reassembly), `shmem.rs`
@@ -54,7 +53,7 @@ reader** — steps 1 & 3. The UE plugin is written (`ue/NapaPreviz/`) but not ye
 **The authoritative companion repo is `~/Projects/artnet-tester`** — it is the lighting
 install's real control software and the source of truth for geometry + protocol. Before
 writing the receiver, read:
-- `config.json` — geometry (`20x20x20` here; the Napa volume is `20x20x140`), orientation, per-controller IP→z-layer mapping. **The previz must consume this file, not reinvent it.**
+- `config.json` — geometry (`20x20x20` here; the full installation volume is `20x20x140`), orientation, per-controller IP→z-layer mapping. **The previz must consume this file, not reinvent it.**
 - `artnet.py` — the `Raster` data model `(z,y,x,rgb)` and the exact Art-Net packing (510 ch/universe, opcode `0x5000`, ArtSync `0x5200`).
 - `src/artnet/core.rs` — the Rust Art-Net packet format/constants. **Note: send-only** (no receiver), so it's a format reference, not a receive path to reuse.
 - `VolumetricDisplay.cpp` / `.h` — a working C++ OpenGL voxel renderer that already ingests this Art-Net; the `listenArtNet` method is **the ground-truth oracle the receiver's decode/mapping was ported from**, and the reference for live test cross-checks.
@@ -68,9 +67,9 @@ photogrammetry feasibility; offline hero pass / RTX box; deliverable spec; TD fr
 See §11.
 
 **Immediate next step — Phase 1 spike (de-risk the two hard integrations):**
-1. ⬜ Create a UE5 project on the Mac; install **Cesium for Unreal**; set a `CesiumGeoreference` to **38.297189, -122.284700** and stream Google Photorealistic 3D Tiles of the courthouse block. *Acceptance: the Napa courthouse + surrounding buildings render in-editor.* **(Needs the UE editor + a Google Maps Platform API key — owner/human task.)**
+1. ⬜ Create a UE5 project on the Mac; install **Cesium for Unreal**; set a `CesiumGeoreference` to **38.297189, -122.284700** and stream Google Photorealistic 3D Tiles of the site block. *Acceptance: the site + surrounding buildings render in-editor.* **(Needs the UE editor + a Google Maps Platform API key — owner/human task.)**
 2. ✅ *(built + unit-tested; live cross-check still pending)* **Volume receiver** in `receiver/`: binds loopback ports per `config.json`, decodes + latches on ArtSync into the RGB voxel buffer, writes it to a POSIX shared-memory region (seqlock; layout in `receiver/README.md`). Verified: `bazel test //receiver:previz_receiver_test` (16/16), binary builds and starts against `sim_config_4.json`. **Remaining acceptance:** drive it with a known scene from `artnet-tester` and confirm the shm buffer matches what the C++ simulator shows for the same feed.
-3. 🟡 *(plugin written, not yet compiled)* In UE, a C++ component `mmap`s the buffer and lights emissive instances from it. Delivered as the **`NapaPreviz` UE plugin** (`ue/NapaPreviz/`) with a `UPrevizVolumeComponent` (seqlock reader + InstancedStaticMesh voxels). **Full step-by-step to run the live test is in `ue/README.md`.** *Acceptance: changing the scene in `artnet-tester` visibly changes the emissive geometry live in UE.* **(Needs a UE C++ project; the plugin C++ hasn't been compiled here.)**
+3. 🟡 *(plugin written, not yet compiled)* In UE, a C++ component `mmap`s the buffer and lights emissive instances from it. Delivered as the **`LightingPreviz` UE plugin** (`ue/LightingPreviz/`) with a `UPrevizVolumeComponent` (seqlock reader + InstancedStaticMesh voxels). **Full step-by-step to run the live test is in `ue/README.md`.** *Acceptance: changing the scene in `artnet-tester` visibly changes the emissive geometry live in UE.* **(Needs a UE C++ project; the plugin C++ hasn't been compiled here.)**
 
 Doing 1–3 proves Cesium streaming and live-Art-Net-into-real-time-render end to end.
 Everything after is in §10.
@@ -250,8 +249,8 @@ Color fidelity: **v1 uses linear/sRGB emissive** — no WS2812b response-curve m
 ever needed.)
 
 ### 6.3 Placement
-Hang anchor is set: **38.297189, -122.284700** (plaza by the Historic Napa County
-Courthouse). A thin tool sets the `GlobeAnchor` to that lat/long plus **[OPEN]** the
+Hang anchor is set: **38.297189, -122.284700** (the first target's installation
+plaza). A thin tool sets the `GlobeAnchor` to that lat/long plus **[OPEN]** the
 **altitude** of the hang point (top of the 21 m volume, or its base 3 m above grade —
 need to fix the datum) and the **heading** of the 20×20 cross-section (which horizontal
 axis faces which compass bearing — drives how the curtains present to viewers), and
@@ -313,7 +312,7 @@ that the existing repo already gives us **known-good signal generators**.
 
 ## 10. Proposed phasing
 
-1. **Spike / de-risk (1–2 wk):** UE5 + Cesium streaming the Napa courthouse block; volume receiver reassembling one frame from the C++ sim's/Python sender's Art-Net and lighting a *hardcoded* emissive slab. Proves the two riskiest integrations end-to-end.
+1. **Spike / de-risk (1–2 wk):** UE5 + Cesium streaming the installation site block; volume receiver reassembling one frame from the C++ sim's/Python sender's Art-Net and lighting a *hardcoded* emissive slab. Proves the two riskiest integrations end-to-end.
 2. **Sculpture pipeline:** receiver → DMX volume texture → 56k emissive instances at full count; night look (bloom/fog/exposure); WS2812b color match if in scope.
 3. **Site integration:** georeferenced placement; optional plaza photogrammetry merged with Cesium.
 4. **Capture:** live recording path; optional offline path-traced pass.

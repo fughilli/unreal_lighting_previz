@@ -1,4 +1,4 @@
-// Copyright Napa Lighted Art Festival previz.
+// Copyright the unreal_lighting_previz authors.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,7 +13,7 @@ class UPrevizVolumeComponent;
  * from Python — `Volume` holds the component to configure.
  */
 UCLASS(ClassGroup = (Previz))
-class NAPAPREVIZ_API APrevizVolumeActor : public AActor
+class LIGHTINGPREVIZ_API APrevizVolumeActor : public AActor
 {
     GENERATED_BODY()
 

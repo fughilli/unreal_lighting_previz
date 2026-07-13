@@ -2,16 +2,16 @@
   "FileVersion": 3,
   "Version": 1,
   "VersionName": "0.1.0",
-  "FriendlyName": "Napa Previz",
+  "FriendlyName": "Lighting Previz",
   "Description": "Reads the previz volume receiver's POSIX shared-memory buffer and drives emissive voxel instances from the live Art-Net feed.",
   "Category": "Previz",
-  "CreatedBy": "Napa Lighted Art Festival previz",
+  "CreatedBy": "unreal_lighting_previz",
   "CanContainContent": true,
   "IsBetaVersion": true,
   "Installed": false,
   "Modules": [
     {
-      "Name": "NapaPreviz",
+      "Name": "LightingPreviz",
       "Type": "Runtime",
       "LoadingPhase": "Default",
       "PlatformAllowList": [ "Mac" ]

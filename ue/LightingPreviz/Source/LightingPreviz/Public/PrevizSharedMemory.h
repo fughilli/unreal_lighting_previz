@@ -1,4 +1,4 @@
-// Copyright Napa Lighted Art Festival previz.
+// Copyright the unreal_lighting_previz authors.
 //
 // Read side of the previz shared-memory transport. This mirrors, byte-for-byte,
 // the Rust writer in `previz/receiver/src/shmem.rs` (see that file / the
@@ -40,7 +40,7 @@ namespace PrevizShm
  * frame snapshots via the seqlock protocol. Not a UObject — owned by the
  * component below.
  */
-class NAPAPREVIZ_API FPrevizSharedMemory
+class LIGHTINGPREVIZ_API FPrevizSharedMemory
 {
 public:
     FPrevizSharedMemory() = default;

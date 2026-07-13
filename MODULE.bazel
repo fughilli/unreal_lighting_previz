@@ -1,5 +1,5 @@
 ###############################################################################
-# Napa Lighted Art Festival — previz
+# Light-art previz
 #
 # Self-contained Bazel module for the previsualization tooling. The first
 # artifact is the *volume receiver*: a loopback Art-Net sidecar that reassembles
@@ -9,7 +9,7 @@
 # rules_rust 0.61.0) so the two projects stay easy to cross-reference.
 ###############################################################################
 module(
-    name = "napa-previz",
+    name = "lighting-previz",
     version = "0.1.0",
 )
 

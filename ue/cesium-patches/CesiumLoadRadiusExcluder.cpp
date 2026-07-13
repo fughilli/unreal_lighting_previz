@@ -1,4 +1,4 @@
-// Napa previz addition: distance-based tile excluder.
+// Previz addition: distance-based tile excluder.
 
 #include "CesiumLoadRadiusExcluder.h"
 #include "CesiumTile.h"

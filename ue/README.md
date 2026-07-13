@@ -1,6 +1,6 @@
 # Testing the previz in UE5
 
-This is **Phase 1 step 3**: a UE5 plugin (`NapaPreviz`) that reads the volume
+This is **Phase 1 step 3**: a UE5 plugin (`LightingPreviz`) that reads the volume
 receiver's shared-memory buffer and lights emissive voxel instances from the
 **live Art-Net feed**. The full live test is three processes on this one Mac:
 
@@ -10,7 +10,7 @@ receiver's shared-memory buffer and lights emissive voxel instances from the
                                                                    │
                                                             POSIX shm /previz_dev
                                                                    ▼
-                                                     UE5 + NapaPreviz plugin
+                                                     UE5 + LightingPreviz plugin
                                                      (emissive voxel instances)
 ```
 
@@ -46,8 +46,8 @@ Copy (or symlink) this plugin into your project's `Plugins/` folder:
 ```sh
 # from previz/
 mkdir -p "/path/to/YourProject/Plugins"
-cp -R ue/NapaPreviz "/path/to/YourProject/Plugins/NapaPreviz"
-# (or: ln -s "$PWD/ue/NapaPreviz" "/path/to/YourProject/Plugins/NapaPreviz")
+cp -R ue/LightingPreviz "/path/to/YourProject/Plugins/LightingPreviz"
+# (or: ln -s "$PWD/ue/LightingPreviz" "/path/to/YourProject/Plugins/LightingPreviz")
 ```
 
 Regenerate project files and build:
@@ -56,7 +56,7 @@ Regenerate project files and build:
   `Tools ▸ Refresh ... Project`), then build from Xcode, **or**
 - just reopen the `.uproject` — the editor offers to rebuild missing modules; say yes.
 
-Confirm the plugin is enabled: `Edit ▸ Plugins ▸ search "Napa Previz"`.
+Confirm the plugin is enabled: `Edit ▸ Plugins ▸ search "Lighting Previz"`.
 
 ## 3. Make an emissive voxel material (one-time)
 
@@ -99,7 +99,7 @@ bazel run //:receiver -- --config configs/dev_20x20x20.json --shm previz_dev
 
 ```sh
 bazelisk run //:sender -- \
-  --config "$HOME/Projects/wakenmake/projects/napa_lighted_art_festival/previz/configs/dev_20x20x20.json" \
+  --config "/path/to/unreal_lighting_previz/configs/dev_20x20x20.json" \
   --scene  "$HOME/Projects/artnet-tester/rainbow_scene.py"
 ```
 
@@ -107,11 +107,11 @@ bazelisk run //:sender -- \
 `published N frames (… fps)`. That alone proves sender → receiver → shm works.
 
 **Terminal 3 — UE:** press **Play**. The voxel grid should animate with the
-rainbow scene. Watch **Output Log** (filter `LogNapaPreviz`) for the connect
+rainbow scene. Watch **Output Log** (filter `LogLightingPreviz`) for the connect
 line and per-second stats.
 
-For the real geometry, swap both `--config` to `configs/napa_20x20x140.json` and
-set the component's **Shm Name** to `previz_napa` (56,000 voxels).
+For the real geometry, swap both `--config` to `configs/prod_20x20x140.json` and
+set the component's **Shm Name** to `previz_prod` (56,000 voxels).
 
 > `bazel run //:receiver` and the raw `bazel-bin/receiver/previz-receiver` binary
 > behave identically — relative `--config` paths resolve from the directory you

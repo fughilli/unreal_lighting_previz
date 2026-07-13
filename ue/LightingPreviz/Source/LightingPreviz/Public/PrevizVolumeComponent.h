@@ -1,4 +1,4 @@
-// Copyright Napa Lighted Art Festival previz.
+// Copyright the unreal_lighting_previz authors.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -23,7 +23,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPrevizFrameReceived);
  * component logs frame/seq stats so you can confirm the live feed is flowing.
  */
 UCLASS(ClassGroup = (Previz), meta = (BlueprintSpawnableComponent))
-class NAPAPREVIZ_API UPrevizVolumeComponent : public UActorComponent
+class LIGHTINGPREVIZ_API UPrevizVolumeComponent : public UActorComponent
 {
     GENERATED_BODY()
 

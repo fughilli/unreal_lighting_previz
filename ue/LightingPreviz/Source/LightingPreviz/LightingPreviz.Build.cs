@@ -1,9 +1,9 @@
-// Copyright Napa Lighted Art Festival previz.
+// Copyright the unreal_lighting_previz authors.
 using UnrealBuildTool;
 
-public class NapaPreviz : ModuleRules
+public class LightingPreviz : ModuleRules
 {
-    public NapaPreviz(ReadOnlyTargetRules Target) : base(Target)
+    public LightingPreviz(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 

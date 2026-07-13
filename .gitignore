@@ -5,7 +5,7 @@ bazel-*
 # Rust / Cargo
 target/
 
-# Unreal Engine generated dirs (plugin builds under ue/NapaPreviz)
+# Unreal Engine generated dirs (plugin builds under ue/LightingPreviz)
 Binaries/
 Intermediate/
 Saved/

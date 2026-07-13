@@ -1,5 +1,5 @@
 """
-Scripted setup of the NapaPreviz test in a UE5 project.
+Scripted setup of the LightingPreviz test in a UE5 project.
 
 Creates an unlit emissive material (M_Voxel) that reads Per-Instance Custom Data
 0/1/2 as RGB, spawns an Actor named "PrevizVolume" in the current level, adds a
@@ -217,7 +217,7 @@ def main():
         if not hasattr(unreal, "PrevizVolumeActor"):
             unreal.log_error(
                 "[previz-setup] unreal.PrevizVolumeActor not found — is the "
-                "NapaPreviz plugin enabled and compiled?")
+                "LightingPreviz plugin enabled and compiled?")
             return
         les = open_or_create_level()
         mat = make_material()

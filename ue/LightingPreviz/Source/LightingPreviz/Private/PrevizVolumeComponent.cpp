@@ -1,11 +1,11 @@
-// Copyright Napa Lighted Art Festival previz.
+// Copyright the unreal_lighting_previz authors.
 #include "PrevizVolumeComponent.h"
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogNapaPreviz, Log, All);
+DEFINE_LOG_CATEGORY_STATIC(LogLightingPreviz, Log, All);
 
 UPrevizVolumeComponent::UPrevizVolumeComponent()
 {
@@ -61,7 +61,7 @@ void UPrevizVolumeComponent::BuildInstances()
 {
     if (!VoxelMesh)
     {
-        UE_LOG(LogNapaPreviz, Warning,
+        UE_LOG(LogLightingPreviz, Warning,
             TEXT("No VoxelMesh assigned — connected but rendering nothing. "
                  "Assign a cube mesh + emissive material to see voxels."));
         return;
@@ -94,7 +94,7 @@ void UPrevizVolumeComponent::BuildInstances()
         Ism->AddInstance(FTransform(FQuat::Identity, Loc, FVector(VoxelScale)));
     }
 
-    UE_LOG(LogNapaPreviz, Log, TEXT("Built %d voxel instances (%dx%dx%d)"),
+    UE_LOG(LogLightingPreviz, Log, TEXT("Built %d voxel instances (%dx%dx%d)"),
         NumVoxels, GridW, GridH, GridD);
 }
 
@@ -136,7 +136,7 @@ void UPrevizVolumeComponent::BuildStrands()
         }
     }
 
-    UE_LOG(LogNapaPreviz, Log, TEXT("Built %d strands (thickness %.1f cm, height %.0f cm)"),
+    UE_LOG(LogLightingPreviz, Log, TEXT("Built %d strands (thickness %.1f cm, height %.0f cm)"),
         GridW * GridH, StrandThickness, HeightCm);
 }
 
@@ -183,7 +183,7 @@ void UPrevizVolumeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
         {
             LastLogTime = Now;
             const FColor C = GetVoxel(GridW / 2, GridH / 2, GridD / 2);
-            UE_LOG(LogNapaPreviz, Log,
+            UE_LOG(LogLightingPreviz, Log,
                 TEXT("frames=%llu  center voxel=(%d,%d,%d)"),
                 FrameCount, C.R, C.G, C.B);
         }
@@ -252,7 +252,7 @@ void UPrevizVolumeComponent::BuildLights()
         }
     }
 
-    UE_LOG(LogNapaPreviz, Log, TEXT("Built %d feed-driven lights (%dx%dx%d)"),
+    UE_LOG(LogLightingPreviz, Log, TEXT("Built %d feed-driven lights (%dx%dx%d)"),
         Lights.Num(), GX, GY, GZ);
 }
 

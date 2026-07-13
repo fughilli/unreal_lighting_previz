@@ -1,6 +1,6 @@
 # previz volume receiver
 
-A loopback **Art-Net sidecar** for the Napa previz (README §6.1). It binds one
+A loopback **Art-Net sidecar** for the previz (README §6.1). It binds one
 UDP socket per virtual controller (from `artnet-tester`'s `config.json`),
 reassembles the full voxel volume using the **same mapping as the hardware /
 C++ simulator**, latches each frame on **ArtSync**, and publishes it to a POSIX

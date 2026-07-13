@@ -186,8 +186,8 @@ mod tests {
     }
 
     #[test]
-    fn napa_single_cube_is_56k_voxels() {
-        let napa = r#"{
+    fn prod_single_cube_is_56k_voxels() {
+        let prod = r#"{
           "world_geometry": "20x20x140",
           "cubes": [{
             "position": [0,0,0],
@@ -195,7 +195,7 @@ mod tests {
             "artnet_mappings": [{"ip":"127.0.0.1","port":51330,"z_idx":[0]}]
           }]
         }"#;
-        let cfg = Config::from_json_str(napa).unwrap();
+        let cfg = Config::from_json_str(prod).unwrap();
         assert_eq!(cfg.num_voxels, 56_000);
     }
 
