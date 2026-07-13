@@ -41,12 +41,11 @@ Caching is NOT a source patch — it's config in `DefaultEngine.ini`
    `session-stable-cache-CesiumRuntime.cpp.snippet`. (root.json has no `session=`
    so it's untouched -> each run still gets a fresh valid session for new tiles.)
 
-5. **Two-sided tiles** — asset edit, not source: set **Two Sided = true** on
-   `/CesiumForUnreal/Materials/M_CesiumBaseMaterial` (the base the tileset's
-   instance inherits). Photogrammetry facade normals are solved inconsistently
-   (some tilt up, some down/concave), so single-sided `max(0,N·L)` shading
-   hard-clamps back-facing facets to black — a hard "corner" of darkness at each
-   light's height that no light position can fix. Two-sided lights each facet by
-   whichever side faces the light. Re-apply after a Cesium reinstall (it's in the
-   plugin's Content). Reproduce headlessly: load the material, set two_sided=True,
-   recompile, save.
+~~5. **Two-sided tiles**~~ — **tried and reverted (2026-07-12): do NOT re-apply.**
+   Setting **Two Sided = true** on `/CesiumForUnreal/Materials/M_CesiumBaseMaterial`
+   was an attempt to fix uneven point-light terrain lighting (dark band above the
+   light's z; hypothesis was inconsistently solved photogrammetry normals being
+   hard-clamped by single-sided `max(0,N·L)` shading). It did not fix the issue,
+   so the material is back to single-sided. The uneven-lighting cause is still
+   unknown — reproduced with a plain hand-placed point light, so it is not the
+   plugin's feed-driven light grid.
