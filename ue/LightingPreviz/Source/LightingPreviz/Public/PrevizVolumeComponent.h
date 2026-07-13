@@ -104,6 +104,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz|Lights")
     float LightSourceRadius = 150.0f;
 
+    /** Max rate (Hz) at which feed data is pushed into instances/lights.
+     *  The receiver publishes at ~70 fps; re-uploading every editor tick is
+     *  wasted work. 0 = uncapped (push every tick). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz")
+    float MaxUpdateRateHz = 30.0f;
+
     /** Log a stats line this often (seconds). 0 disables. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz")
     float LogEverySeconds = 1.0f;
@@ -141,6 +147,11 @@ private:
 
     // Latest frame, NumVoxels*3 bytes, (z,y,x) order.
     TArray<uint8> Frame;
+
+    // Previous pushed frame, for skipping unchanged voxels.
+    TArray<uint8> PrevFrame;
+
+    float UpdateAccum = 0.0f;
 
     UPROPERTY(Transient)
     TObjectPtr<UInstancedStaticMeshComponent> Ism;

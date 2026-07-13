@@ -69,6 +69,13 @@ void UPrevizVolumeComponent::BuildInstances()
 
     Ism = NewObject<UInstancedStaticMeshComponent>(GetOwner());
     Ism->SetupAttachment(GetOwner()->GetRootComponent());
+    // Keep the 8000+ per-frame-changing emissive instances out of Lumen's
+    // surface cache and the distance field: with these on, every frame of feed
+    // data invalidates the captured cards and Lumen re-captures the whole
+    // volume continuously (tens of ms/frame). Light spill onto the environment
+    // comes from the feed-driven light grid instead.
+    Ism->bAffectDynamicIndirectLighting = false;
+    Ism->bAffectDistanceFieldLighting = false;
     Ism->RegisterComponent();
     Ism->SetStaticMesh(VoxelMesh);
     if (VoxelMaterial)
@@ -107,6 +114,8 @@ void UPrevizVolumeComponent::BuildStrands()
 
     StrandIsm = NewObject<UInstancedStaticMeshComponent>(GetOwner());
     StrandIsm->SetupAttachment(GetOwner()->GetRootComponent());
+    StrandIsm->bAffectDynamicIndirectLighting = false;
+    StrandIsm->bAffectDistanceFieldLighting = false;
     StrandIsm->RegisterComponent();
     StrandIsm->SetStaticMesh(StrandMesh);
     if (StrandMaterial)
@@ -159,6 +168,20 @@ void UPrevizVolumeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
         return;
     }
 
+    // Cap how often we push data into the scene: the receiver publishes at
+    // ~70 fps, but re-uploading 8000 instances' custom data at editor tick
+    // rate costs more than the visual difference is worth.
+    if (MaxUpdateRateHz > 0.0f)
+    {
+        UpdateAccum += DeltaTime;
+        const float Interval = 1.0f / MaxUpdateRateHz;
+        if (UpdateAccum < Interval)
+        {
+            return;
+        }
+        UpdateAccum = FMath::Min(UpdateAccum - Interval, Interval);
+    }
+
     if (!Shm.ReadFrame(Frame.GetData(), Frame.Num()))
     {
         return; // couldn't grab a tear-free snapshot this tick; try next
@@ -201,17 +224,27 @@ void UPrevizVolumeComponent::UpdateInstances()
     {
         return;
     }
+    // Only touch instances whose color actually changed since the last push —
+    // static scenes (and static regions of dynamic scenes) then cost nothing.
+    const bool bHavePrev = (PrevFrame.Num() == Frame.Num());
     const float Inv = 1.0f / 255.0f;
+    int32 NumChanged = 0;
     for (int32 i = 0; i < NumVoxels; ++i)
     {
-        const float Rgb[3] = {
-            Frame[i * 3 + 0] * Inv,
-            Frame[i * 3 + 1] * Inv,
-            Frame[i * 3 + 2] * Inv,
-        };
+        const uint8* Src = &Frame[i * 3];
+        if (bHavePrev && FMemory::Memcmp(&PrevFrame[i * 3], Src, 3) == 0)
+        {
+            continue;
+        }
+        const float Rgb[3] = { Src[0] * Inv, Src[1] * Inv, Src[2] * Inv };
         Ism->SetCustomData(i, MakeArrayView(Rgb, 3), /*bMarkRenderStateDirty*/ false);
+        ++NumChanged;
     }
-    Ism->MarkRenderStateDirty();
+    if (NumChanged > 0)
+    {
+        Ism->MarkRenderStateDirty();
+    }
+    PrevFrame = Frame;
 }
 
 void UPrevizVolumeComponent::BuildLights()
@@ -302,13 +335,24 @@ void UPrevizVolumeComponent::UpdateLights()
         const float Brightness = FMath::Max3(Avg.X, Avg.Y, Avg.Z);
         if (Brightness <= KINDA_SMALL_NUMBER)
         {
-            Light->SetIntensity(0.0f);
+            if (Light->Intensity != 0.0f)
+            {
+                Light->SetIntensity(0.0f);
+            }
             continue;
         }
         // Hue from the normalized color; intensity scaled by brightness.
+        // Skip the setters when nothing changed — they push render commands.
         const FLinearColor Color(Avg.X / Brightness, Avg.Y / Brightness, Avg.Z / Brightness);
-        Light->SetLightColor(Color);
-        Light->SetIntensity(LightIntensity * Brightness);
+        const float NewIntensity = LightIntensity * Brightness;
+        if (Light->LightColor != Color.ToFColor(/*bSRGB*/ true))
+        {
+            Light->SetLightColor(Color);
+        }
+        if (!FMath::IsNearlyEqual(Light->Intensity, NewIntensity, 0.01f))
+        {
+            Light->SetIntensity(NewIntensity);
+        }
     }
 }
 

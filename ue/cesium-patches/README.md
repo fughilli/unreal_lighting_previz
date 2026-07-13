@@ -46,6 +46,19 @@ Caching is NOT a source patch — it's config in `DefaultEngine.ini`
    was an attempt to fix uneven point-light terrain lighting (dark band above the
    light's z; hypothesis was inconsistently solved photogrammetry normals being
    hard-clamped by single-sided `max(0,N·L)` shading). It did not fix the issue,
-   so the material is back to single-sided. The uneven-lighting cause is still
-   unknown — reproduced with a plain hand-placed point light, so it is not the
-   plugin's feed-driven light grid.
+   so the material is back to single-sided. The real cause turned out to be the
+   tiles' vertex normals themselves (see patch 6) — reproduced with a plain
+   hand-placed point light, so it was never the plugin's feed-driven light grid.
+
+6. **Geometric-normal override** — asset edit, not source: on
+   `/CesiumForUnreal/Materials/M_CesiumBaseMaterial`, set **Tangent Space
+   Normal = false** and feed the Normal input from a Custom node computing
+   `n = normalize(cross(ddy(WP), ddx(WP))); n *= sign(dot(n, Cam));`
+   (inputs: WorldPosition as `WP`, CameraVectorWS as `Cam`). Google
+   Photorealistic tiles have unusable vertex normals (World Normal buffer shows
+   the whole mesh as one color), so facades go black above any light's height
+   (`N·L < 0`). This replaces the shading normal with the true per-pixel
+   geometric normal, camera-oriented so front-facing pixels always get an
+   outward normal. Lighting becomes per-triangle flat, which is invisible on
+   night photogrammetry. Re-apply after a Cesium reinstall (it's in the
+   plugin's Content).
