@@ -113,6 +113,13 @@ line and per-second stats.
 For the real geometry, swap both `--config` to `configs/prod_20x20x140.json` and
 set the component's **Shm Name** to `previz_prod` (56,000 voxels).
 
+For the corridor runner, use `configs/runner_1x5_20x20x20.json` (40,000 voxels,
+same `previz_dev` shm): five 20×20×20 modules, one loopback controller each on
+ports 6454–6458. The modules stack along the buffer's z axis (world
+`20x20x100`), so the receiver's cube-concatenated buffer is exactly the dense
+raster the UE component expects; lay the runner horizontally by pitching the
+volume actor 90° (`VOLUME_PITCH` in `scripts/setup_cesium_site.py`).
+
 > `bazel run //:receiver` and the raw `bazel-bin/receiver/previz-receiver` binary
 > behave identically — relative `--config` paths resolve from the directory you
 > ran the command in either way.

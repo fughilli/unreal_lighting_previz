@@ -26,7 +26,11 @@ HANG_LON = -122.284700
 # volume sits at plaza level (the altitude datum is an open question, README).
 ORIGIN_HEIGHT = -26.0
 VOLUME_BASE_Z = 100.0  # cm; tuned on-site 2026-07-13 (was 300 = 3 m above grade)
-VOLUME_YAW = -127.0    # deg; aligns the 20x20 cross-section with the corridor
+VOLUME_YAW = -127.0    # deg; aligns the volume with the corridor
+# For the 1x5 runner config the module-stack axis is the volume's local Z;
+# pitch it 90 deg to lay the runner horizontally down the corridor (flip the
+# sign if it extends the wrong way). Use 0 for vertical/tower configs.
+VOLUME_PITCH = -90.0   # deg
 MAP_PATH = "/Game/PrevizMap"
 KEY_FILE = os.path.expanduser("~/Projects/scratch/credentials/maps_api_key.txt")
 GOOGLE_TILES_URL = "https://tile.googleapis.com/v1/3dtiles/root.json?key=%s"
@@ -102,9 +106,10 @@ def main():
         for a in actors().get_all_level_actors():
             if a.get_actor_label() == "PrevizVolume":
                 a.set_actor_location(unreal.Vector(0, 0, VOLUME_BASE_Z), False, False)
-                a.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=0.0, yaw=VOLUME_YAW), False)
-                log("moved PrevizVolume to origin (z=%.0f cm, yaw=%.0f deg)"
-                    % (VOLUME_BASE_Z, VOLUME_YAW))
+                a.set_actor_rotation(
+                    unreal.Rotator(roll=0.0, pitch=VOLUME_PITCH, yaw=VOLUME_YAW), False)
+                log("moved PrevizVolume to origin (z=%.0f cm, pitch=%.0f, yaw=%.0f deg)"
+                    % (VOLUME_BASE_Z, VOLUME_PITCH, VOLUME_YAW))
 
         les.save_current_level()
         unreal.EditorAssetLibrary.save_asset(MAP_PATH)
