@@ -12,6 +12,7 @@ public class LightingPreviz : ModuleRules
             "Core",
             "CoreUObject",
             "Engine",
+            "RHI", // FUpdateTextureRegion2D for the live voxel texture
         });
 
         // POSIX shm_open / mmap live in the platform's C library on Mac; no extra

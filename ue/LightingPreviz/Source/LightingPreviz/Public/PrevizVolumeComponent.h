@@ -4,23 +4,29 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "PrevizSharedMemory.h"
+#include "RHITypes.h" // FUpdateTextureRegion2D
 #include "PrevizVolumeComponent.generated.h"
 
 class UInstancedStaticMeshComponent;
 class UStaticMesh;
 class UMaterialInterface;
+class UMaterialInstanceDynamic;
+class UTexture2D;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPrevizFrameReceived);
 
 /**
  * Drop this on an Actor to light a voxel volume from the previz receiver's
  * shared memory. On BeginPlay it connects to `/<ShmName>`, builds an
- * InstancedStaticMesh (one instance per voxel on a grid), and every tick copies
- * the latest frame's RGB into per-instance custom data.
+ * InstancedStaticMesh (one instance per voxel on a grid), and every frame
+ * uploads the volume's RGB into a small transient texture (one bulk update —
+ * per-instance data stays static, which is what keeps 56k voxels fast).
  *
- * To see color you need an emissive material that reads Per Instance Custom Data
- * floats 0/1/2 as R/G/B (see previz/ue/README.md). Even without a material, the
- * component logs frame/seq stats so you can confirm the live feed is flowing.
+ * To see color you need an emissive material with a texture parameter named
+ * `VoxelTex`, sampled at the per-instance UV stored in Per Instance Custom
+ * Data floats 0/1 (see previz/ue/README.md; setup_previz_level.py builds it).
+ * Even without a material, the component logs frame/seq stats so you can
+ * confirm the live feed is flowing.
  */
 UCLASS(ClassGroup = (Previz), meta = (BlueprintSpawnableComponent))
 class LIGHTINGPREVIZ_API UPrevizVolumeComponent : public UActorComponent
@@ -51,7 +57,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz")
     TObjectPtr<UStaticMesh> VoxelMesh;
 
-    /** Emissive material reading Per Instance Custom Data 0/1/2 as RGB. */
+    /** Emissive material sampling texture parameter `VoxelTex` at the UV in
+     *  Per Instance Custom Data 0/1. A dynamic instance of it gets the live
+     *  volume texture bound at BeginPlay. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz")
     TObjectPtr<UMaterialInterface> VoxelMaterial;
 
@@ -136,7 +144,7 @@ private:
     void BuildInstances();
     void BuildStrands();
     void BuildLights();
-    void UpdateInstances();
+    void UpdateVoxelTexture();
     void UpdateLights();
 
     FPrevizSharedMemory Shm;
@@ -155,6 +163,19 @@ private:
 
     UPROPERTY(Transient)
     TObjectPtr<UInstancedStaticMeshComponent> Ism;
+
+    /** Live volume colors: one texel per voxel, (x + y*W) across, z down. */
+    UPROPERTY(Transient)
+    TObjectPtr<UTexture2D> VoxelTex;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> VoxelMid;
+
+    /** Double-buffered RGBA staging for UpdateTextureRegions (the previous
+     *  upload may still be in flight on the render thread). */
+    TArray<uint8> Staging[2];
+    int32 StagingIndex = 0;
+    FUpdateTextureRegion2D TexRegion;
 
     UPROPERTY(Transient)
     TObjectPtr<UInstancedStaticMeshComponent> StrandIsm;

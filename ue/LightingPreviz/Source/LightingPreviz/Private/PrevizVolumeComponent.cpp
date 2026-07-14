@@ -4,6 +4,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogLightingPreviz, Log, All);
 
@@ -67,23 +69,41 @@ void UPrevizVolumeComponent::BuildInstances()
         return;
     }
 
+    // Live color texture: one texel per voxel, (x + y*W) across, z down. The
+    // shm frame slice for layer z is already in (y,x) row order, so each
+    // texture row is a straight copy of one z-slice.
+    const int32 TexW = GridW * GridH;
+    const int32 TexH = GridD;
+    VoxelTex = UTexture2D::CreateTransient(TexW, TexH, PF_R8G8B8A8);
+    VoxelTex->SRGB = false;
+    VoxelTex->Filter = TF_Nearest;
+    VoxelTex->NeverStream = true;
+    VoxelTex->UpdateResource();
+    TexRegion = FUpdateTextureRegion2D(0, 0, 0, 0, TexW, TexH);
+    Staging[0].SetNumZeroed(TexW * TexH * 4);
+    Staging[1].SetNumZeroed(TexW * TexH * 4);
+
     Ism = NewObject<UInstancedStaticMeshComponent>(GetOwner());
     Ism->SetupAttachment(GetOwner()->GetRootComponent());
-    // Keep the 8000+ per-frame-changing emissive instances out of Lumen's
-    // surface cache and the distance field: with these on, every frame of feed
-    // data invalidates the captured cards and Lumen re-captures the whole
-    // volume continuously (tens of ms/frame). Light spill onto the environment
-    // comes from the feed-driven light grid instead.
+    // Keep the per-frame-changing emissive instances out of Lumen's surface
+    // cache and the distance field: with these on, every frame of feed data
+    // invalidates the captured cards and Lumen re-captures the whole volume
+    // continuously (tens of ms/frame). Light spill onto the environment comes
+    // from the feed-driven light grid instead.
     Ism->bAffectDynamicIndirectLighting = false;
     Ism->bAffectDistanceFieldLighting = false;
     Ism->RegisterComponent();
     Ism->SetStaticMesh(VoxelMesh);
     if (VoxelMaterial)
     {
-        Ism->SetMaterial(0, VoxelMaterial);
+        VoxelMid = UMaterialInstanceDynamic::Create(VoxelMaterial, this);
+        VoxelMid->SetTextureParameterValue(TEXT("VoxelTex"), VoxelTex);
+        Ism->SetMaterial(0, VoxelMid);
     }
-    // Three custom-data floats per instance: R, G, B in 0..1.
-    Ism->NumCustomDataFloats = 3;
+    // Two custom-data floats per instance: this voxel's UV into VoxelTex.
+    // Set once here; per-frame color flows through the texture, so instance
+    // data never changes again (GPUScene stays untouched at runtime).
+    Ism->NumCustomDataFloats = 2;
     Ism->SetMobility(EComponentMobility::Movable);
     // Emissive points don't need shadows and there are a lot of them.
     Ism->SetCastShadow(false);
@@ -99,10 +119,16 @@ void UPrevizVolumeComponent::BuildInstances()
         const int32 x = rem % GridW;
         const FVector Loc(x * VoxelSpacing, y * VoxelSpacing, z * VoxelSpacing);
         Ism->AddInstance(FTransform(FQuat::Identity, Loc, FVector(VoxelScale)));
+        const float Uv[2] = {
+            (x + y * GridW + 0.5f) / TexW,
+            (z + 0.5f) / TexH,
+        };
+        Ism->SetCustomData(i, MakeArrayView(Uv, 2), /*bMarkRenderStateDirty*/ false);
     }
+    Ism->MarkRenderStateDirty();
 
-    UE_LOG(LogLightingPreviz, Log, TEXT("Built %d voxel instances (%dx%dx%d)"),
-        NumVoxels, GridW, GridH, GridD);
+    UE_LOG(LogLightingPreviz, Log, TEXT("Built %d voxel instances (%dx%dx%d, tex %dx%d)"),
+        NumVoxels, GridW, GridH, GridD, TexW, TexH);
 }
 
 void UPrevizVolumeComponent::BuildStrands()
@@ -190,7 +216,7 @@ void UPrevizVolumeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
     if (bBuildInstances && Ism)
     {
-        UpdateInstances();
+        UpdateVoxelTexture();
     }
     if (bBuildLights && Lights.Num() > 0)
     {
@@ -213,37 +239,37 @@ void UPrevizVolumeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     }
 }
 
-void UPrevizVolumeComponent::UpdateInstances()
+void UPrevizVolumeComponent::UpdateVoxelTexture()
 {
-    // Push RGB (0..1) via SetCustomData so the change is recorded in the instance
-    // update command buffer — a direct PerInstanceSMCustomData write + a plain
-    // MarkRenderStateDirty does NOT re-upload custom data to GPUScene, so the
-    // volume would freeze on frame 1. bMarkRenderStateDirty=false batches the
-    // writes; we flush once at the end.
-    if (!Ism || Ism->GetInstanceCount() != NumVoxels)
+    // One bulk texture upload per frame (~NumVoxels*4 bytes) instead of
+    // per-instance custom-data churn — instances stay static on the GPU.
+    if (!VoxelTex || Staging[0].Num() != NumVoxels * 4)
     {
         return;
     }
-    // Only touch instances whose color actually changed since the last push —
-    // static scenes (and static regions of dynamic scenes) then cost nothing.
-    const bool bHavePrev = (PrevFrame.Num() == Frame.Num());
-    const float Inv = 1.0f / 255.0f;
-    int32 NumChanged = 0;
+    // Skip entirely when the feed didn't change since the last push.
+    if (PrevFrame.Num() == Frame.Num()
+        && FMemory::Memcmp(PrevFrame.GetData(), Frame.GetData(), Frame.Num()) == 0)
+    {
+        return;
+    }
+
+    // Fill the idle staging buffer; the other one may still be in flight on
+    // the render thread from the previous UpdateTextureRegions call.
+    uint8* Dst = Staging[StagingIndex].GetData();
+    StagingIndex ^= 1;
+    const uint8* Src = Frame.GetData();
     for (int32 i = 0; i < NumVoxels; ++i)
     {
-        const uint8* Src = &Frame[i * 3];
-        if (bHavePrev && FMemory::Memcmp(&PrevFrame[i * 3], Src, 3) == 0)
-        {
-            continue;
-        }
-        const float Rgb[3] = { Src[0] * Inv, Src[1] * Inv, Src[2] * Inv };
-        Ism->SetCustomData(i, MakeArrayView(Rgb, 3), /*bMarkRenderStateDirty*/ false);
-        ++NumChanged;
+        Dst[i * 4 + 0] = Src[i * 3 + 0];
+        Dst[i * 4 + 1] = Src[i * 3 + 1];
+        Dst[i * 4 + 2] = Src[i * 3 + 2];
+        Dst[i * 4 + 3] = 255;
     }
-    if (NumChanged > 0)
-    {
-        Ism->MarkRenderStateDirty();
-    }
+    VoxelTex->UpdateTextureRegions(
+        /*MipIndex*/ 0, /*NumRegions*/ 1, &TexRegion,
+        /*SrcPitch*/ (uint32)(TexRegion.Width * 4), /*SrcBpp*/ 4, Dst);
+
     PrevFrame = Frame;
 }
 

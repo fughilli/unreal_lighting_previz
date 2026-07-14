@@ -47,7 +47,29 @@ def log(msg):
     unreal.log("[previz-setup] " + msg)
 
 
+def make_placeholder_texture():
+    """Tiny non-sRGB texture assigned as the sampler's default so M_Voxel
+    compiles standalone; the component overrides it at runtime with the live
+    volume texture (also non-sRGB, so the sampler types match)."""
+    eal = unreal.EditorAssetLibrary
+    path = "/Game/T_VoxelDefault"
+    if eal.does_asset_exist(path):
+        tex = eal.load_asset(path)
+    else:
+        tools = unreal.AssetToolsHelpers.get_asset_tools()
+        tex = tools.create_asset(
+            "T_VoxelDefault", "/Game", unreal.Texture2D, unreal.Texture2DFactoryNew())
+    tex.set_editor_property("srgb", False)
+    tex.set_editor_property("filter", unreal.TextureFilter.TF_NEAREST)
+    eal.save_asset(path)
+    return tex
+
+
 def make_material():
+    """Unlit emissive: sample texture param `VoxelTex` at the per-instance UV
+    (Per Instance Custom Data 0/1). The component streams the live volume into
+    that texture each frame — per-instance data never changes, which is what
+    keeps 56k voxels cheap (per-instance color updates melted the GPU)."""
     eal = unreal.EditorAssetLibrary
     mel = unreal.MaterialEditingLibrary
     path = CONFIG["material_path"]
@@ -62,30 +84,24 @@ def make_material():
     # without it UE silently falls back to the default (gray) material.
     mat.set_editor_property("used_with_instanced_static_meshes", True)
 
-    # Build a float3 RGB from per-instance custom data indices 0,1,2.
-    try:
-        rgb = mel.create_material_expression(
-            mat, unreal.MaterialExpressionPerInstanceCustomData3Vector, -500, 0)
-        rgb.set_editor_property("data_index", 0)
-    except AttributeError:
-        # Older/variant API: three single-float nodes + AppendVector.
-        r = mel.create_material_expression(mat, unreal.MaterialExpressionPerInstanceCustomData, -720, -120)
-        r.set_editor_property("data_index", 0)
-        g = mel.create_material_expression(mat, unreal.MaterialExpressionPerInstanceCustomData, -720, 0)
-        g.set_editor_property("data_index", 1)
-        b = mel.create_material_expression(mat, unreal.MaterialExpressionPerInstanceCustomData, -720, 120)
-        b.set_editor_property("data_index", 2)
-        a1 = mel.create_material_expression(mat, unreal.MaterialExpressionAppendVector, -520, -60)
-        mel.connect_material_expressions(r, "", a1, "A")
-        mel.connect_material_expressions(g, "", a1, "B")
-        a2 = mel.create_material_expression(mat, unreal.MaterialExpressionAppendVector, -360, 0)
-        mel.connect_material_expressions(a1, "", a2, "A")
-        mel.connect_material_expressions(b, "", a2, "B")
-        rgb = a2
+    u = mel.create_material_expression(mat, unreal.MaterialExpressionPerInstanceCustomData, -900, -60)
+    u.set_editor_property("data_index", 0)
+    v = mel.create_material_expression(mat, unreal.MaterialExpressionPerInstanceCustomData, -900, 60)
+    v.set_editor_property("data_index", 1)
+    uv = mel.create_material_expression(mat, unreal.MaterialExpressionAppendVector, -700, 0)
+    mel.connect_material_expressions(u, "", uv, "A")
+    mel.connect_material_expressions(v, "", uv, "B")
+
+    tex = mel.create_material_expression(
+        mat, unreal.MaterialExpressionTextureSampleParameter2D, -520, 0)
+    tex.set_editor_property("parameter_name", "VoxelTex")
+    tex.set_editor_property("sampler_type", unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+    tex.set_editor_property("texture", make_placeholder_texture())
+    mel.connect_material_expressions(uv, "", tex, "UVs")
 
     mul = mel.create_material_expression(mat, unreal.MaterialExpressionMultiply, -200, 0)
     mul.set_editor_property("const_b", CONFIG["emissive_gain"])
-    mel.connect_material_expressions(rgb, "", mul, "A")
+    mel.connect_material_expressions(tex, "RGB", mul, "A")
     mel.connect_material_property(mul, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
 
     mel.recompile_material(mat)
