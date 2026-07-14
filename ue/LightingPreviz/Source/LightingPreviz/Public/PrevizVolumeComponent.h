@@ -94,9 +94,11 @@ public:
     bool bBuildLights = true;
 
     /** Number of light cells across the volume (X,Y,Z). Each cell is one light
-     *  driven by the average of the voxels inside it. Keep modest for perf. */
+     *  driven by the average of the lit voxels inside it. Default is a single
+     *  light for the whole array — overlapping point-light volumes are the #1
+     *  previz framerate killer, so raise this only with care. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz|Lights")
-    FIntVector LightGridResolution = FIntVector(4, 4, 6);
+    FIntVector LightGridResolution = FIntVector(1, 1, 1);
 
     /** Per-light brightness scale (candelas at full white). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Previz|Lights")

@@ -326,7 +326,8 @@ void UPrevizVolumeComponent::UpdateLights()
         return;
     }
 
-    // Accumulate average RGB per cell in one pass over the volume.
+    // Average RGB of the *lit* voxels per cell, in one pass over the volume —
+    // dark LEDs don't drag the light's color/intensity toward black.
     TArray<FVector> Sum;
     Sum.SetNumZeroed(NumCells);
     TArray<int32> Count;
@@ -340,9 +341,13 @@ void UPrevizVolumeComponent::UpdateLights()
             const int32 cy = FMath::Min(y * GY / GridH, GY - 1);
             for (int32 x = 0; x < GridW; ++x)
             {
+                const int32 i = (z * GridW * GridH + y * GridW + x) * 3;
+                if ((Frame[i] | Frame[i + 1] | Frame[i + 2]) == 0)
+                {
+                    continue; // unlit voxel
+                }
                 const int32 cx = FMath::Min(x * GX / GridW, GX - 1);
                 const int32 cell = cx + cy * GX + cz * GX * GY;
-                const int32 i = (z * GridW * GridH + y * GridW + x) * 3;
                 Sum[cell] += FVector(Frame[i], Frame[i + 1], Frame[i + 2]);
                 ++Count[cell];
             }

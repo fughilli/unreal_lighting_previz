@@ -33,9 +33,12 @@ CONFIG = {
     "emissive_gain": 12.0,        # bright emissive so the tiny LEDs bloom
     "strand_thickness": 1.0,      # cm; strand/diffuser rod cross-section
     "location": (300.0, 0.0, 100.0),  # 3 m in front, 1 m up — viewable from spawn
-    # Feed-driven light grid, tuned on-site (2026-07-13): bright enough to wash
-    # the corridor without tanking the framerate.
-    "light_intensity": 4.0,           # candelas at full white, per light
+    # Feed-driven light: ONE point light for the whole array, colored by the
+    # average of the lit voxels. Overlapping point-light volumes are the #1
+    # previz framerate killer (a 4x4x6 grid = 96 lights ran at 3 fps), so keep
+    # this at (1,1,1) unless there's a strong reason not to.
+    "light_grid_resolution": (1, 1, 1),
+    "light_intensity": 4.0,           # candelas at full white
     "light_attenuation_radius": 1000.0,  # cm
     "light_source_radius": 10.0,      # cm
     # Off for perf (translucent refractive overdraw); re-enable for hero shots.
@@ -218,6 +221,8 @@ def place_actor(mat, strand_mat):
         comp.set_editor_property("strand_material", strand_mat)
     comp.set_editor_property("strand_thickness", CONFIG["strand_thickness"])
     comp.set_editor_property("build_strands", CONFIG["build_strands"])
+    comp.set_editor_property(
+        "light_grid_resolution", unreal.IntVector(*CONFIG["light_grid_resolution"]))
     comp.set_editor_property("light_intensity", CONFIG["light_intensity"])
     comp.set_editor_property("light_attenuation_radius", CONFIG["light_attenuation_radius"])
     comp.set_editor_property("light_source_radius", CONFIG["light_source_radius"])
