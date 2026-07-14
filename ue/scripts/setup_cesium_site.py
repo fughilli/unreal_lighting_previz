@@ -27,7 +27,7 @@ HANG_LON = -122.284700
 ORIGIN_HEIGHT = -26.0
 VOLUME_BASE_Z = 100.0  # cm; tuned on-site 2026-07-13 (was 300 = 3 m above grade)
 VOLUME_YAW = -127.0    # deg; aligns the volume with the corridor
-# For the 1x5 runner config the module-stack axis is the volume's local Z;
+# For the runner configs the module-stack axis is the volume's local Z;
 # pitch it 90 deg to lay the runner horizontally down the corridor (flip the
 # sign if it extends the wrong way). Use 0 for vertical/tower configs.
 VOLUME_PITCH = -90.0   # deg

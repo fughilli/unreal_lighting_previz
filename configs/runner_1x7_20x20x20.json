@@ -1,5 +1,5 @@
 {
-  "world_geometry": "20x20x100",
+  "world_geometry": "20x20x140",
   "cubes": [
     {
       "position": [
@@ -8,15 +8,10 @@
         0
       ],
       "dimensions": "20x20x20",
-      "orientation": [
-        "-Z",
-        "Y",
-        "X"
-      ],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
-          "port": 6454,
+          "port": "6454",
           "z_idx": [
             0,
             1,
@@ -38,7 +33,8 @@
             17,
             18,
             19
-          ]
+          ],
+          "universe": 0
         }
       ]
     },
@@ -49,15 +45,10 @@
         20
       ],
       "dimensions": "20x20x20",
-      "orientation": [
-        "-Z",
-        "Y",
-        "X"
-      ],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
-          "port": 6455,
+          "port": "6455",
           "z_idx": [
             0,
             1,
@@ -79,7 +70,8 @@
             17,
             18,
             19
-          ]
+          ],
+          "universe": 0
         }
       ]
     },
@@ -90,15 +82,10 @@
         40
       ],
       "dimensions": "20x20x20",
-      "orientation": [
-        "-Z",
-        "Y",
-        "X"
-      ],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
-          "port": 6456,
+          "port": "6456",
           "z_idx": [
             0,
             1,
@@ -120,7 +107,8 @@
             17,
             18,
             19
-          ]
+          ],
+          "universe": 0
         }
       ]
     },
@@ -131,15 +119,10 @@
         60
       ],
       "dimensions": "20x20x20",
-      "orientation": [
-        "-Z",
-        "Y",
-        "X"
-      ],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
-          "port": 6457,
+          "port": "6457",
           "z_idx": [
             0,
             1,
@@ -161,7 +144,8 @@
             17,
             18,
             19
-          ]
+          ],
+          "universe": 0
         }
       ]
     },
@@ -172,15 +156,10 @@
         80
       ],
       "dimensions": "20x20x20",
-      "orientation": [
-        "-Z",
-        "Y",
-        "X"
-      ],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
-          "port": 6458,
+          "port": "6458",
           "z_idx": [
             0,
             1,
@@ -202,7 +181,82 @@
             17,
             18,
             19
-          ]
+          ],
+          "universe": 0
+        }
+      ]
+    },
+    {
+      "position": [
+        0,
+        0,
+        100
+      ],
+      "dimensions": "20x20x20",
+      "artnet_mappings": [
+        {
+          "ip": "127.0.0.1",
+          "port": "6459",
+          "z_idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "universe": 0
+        }
+      ]
+    },
+    {
+      "position": [
+        0,
+        0,
+        120
+      ],
+      "dimensions": "20x20x20",
+      "artnet_mappings": [
+        {
+          "ip": "127.0.0.1",
+          "port": "6460",
+          "z_idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "universe": 0
         }
       ]
     }
