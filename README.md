@@ -255,9 +255,10 @@ plaza). A thin tool sets the `GlobeAnchor` to that lat/long plus **[OPEN]** the
 need to fix the datum) and the **heading** of the 20×20 cross-section (which horizontal
 axis faces which compass bearing — drives how the curtains present to viewers), and
 aligns local photogrammetry to the Cesium context. *Current previz working values
-(eyeballed on the streamed tiles, 2026-07-13, baked into `ue/scripts/`): base
-1 m above local grade (z=100 cm), yaw **-127°** to align with the corridor —
-confirm both against the real survey before Phase 3.*
+(eyeballed on the streamed tiles, 2026-07-13, baked into `ue/scripts/`): the
+1×7 runner sits at (-2 m, 0, +4 m) from the georeferenced origin, rolled 90°
+so the module-stack axis lies horizontal, yaw **-33°** to align with the
+corridor — confirm against the real survey before Phase 3.*
 
 ---
 

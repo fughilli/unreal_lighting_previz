@@ -25,12 +25,12 @@ HANG_LON = -122.284700
 # minus geoid ~ -32 m). This is a starting estimate — fine-tune visually so the
 # volume sits at plaza level (the altitude datum is an open question, README).
 ORIGIN_HEIGHT = -26.0
-VOLUME_BASE_Z = 100.0  # cm; tuned on-site 2026-07-13 (was 300 = 3 m above grade)
-VOLUME_YAW = -127.0    # deg; aligns the volume with the corridor
-# For the runner configs the module-stack axis is the volume's local Z;
-# pitch it 90 deg to lay the runner horizontally down the corridor (flip the
-# sign if it extends the wrong way). Use 0 for vertical/tower configs.
-VOLUME_PITCH = -90.0   # deg
+# Volume transform, tuned in-editor against the streamed tiles (2026-07-13).
+# The runner's module-stack axis is the volume's local Z; the 90 deg roll lays
+# it horizontally down the corridor and the yaw aligns it. Rotation tuple is
+# (roll, pitch, yaw) = the editor's X, Y, Z rotation fields.
+VOLUME_POS = (-200.0, 0.0, 400.0)  # cm, relative to the georeferenced origin
+VOLUME_ROT = (90.0, 0.0, -33.0)
 MAP_PATH = "/Game/PrevizMap"
 KEY_FILE = os.path.expanduser("~/Projects/scratch/credentials/maps_api_key.txt")
 GOOGLE_TILES_URL = "https://tile.googleapis.com/v1/3dtiles/root.json?key=%s"
@@ -116,11 +116,13 @@ def main():
         # 5) Move the LED volume to the georeferenced hang point.
         for a in actors().get_all_level_actors():
             if a.get_actor_label() == "PrevizVolume":
-                a.set_actor_location(unreal.Vector(0, 0, VOLUME_BASE_Z), False, False)
+                a.set_actor_location(unreal.Vector(*VOLUME_POS), False, False)
                 a.set_actor_rotation(
-                    unreal.Rotator(roll=0.0, pitch=VOLUME_PITCH, yaw=VOLUME_YAW), False)
-                log("moved PrevizVolume to origin (z=%.0f cm, pitch=%.0f, yaw=%.0f deg)"
-                    % (VOLUME_BASE_Z, VOLUME_PITCH, VOLUME_YAW))
+                    unreal.Rotator(
+                        roll=VOLUME_ROT[0], pitch=VOLUME_ROT[1], yaw=VOLUME_ROT[2]),
+                    False)
+                log("moved PrevizVolume to %s, rot (roll,pitch,yaw)=%s"
+                    % (VOLUME_POS, VOLUME_ROT))
 
         les.save_current_level()
         unreal.EditorAssetLibrary.save_asset(MAP_PATH)
