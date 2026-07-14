@@ -102,7 +102,18 @@ def main():
         except Exception as e:
             log("CesiumSunSky failed (%s) — add a DirectionalLight manually" % e)
 
-        # 4) Move the LED volume to the georeferenced hang point.
+        # 4) Only one directional light can drive forward shading (translucency,
+        #    volumetrics); with both CesiumSunSky's sun and the NightMoonlight
+        #    present UE warns and picks arbitrarily. Make the moonlight (the
+        #    night key light) win deterministically.
+        for a in actors().get_all_level_actors():
+            comp = a.get_component_by_class(unreal.DirectionalLightComponent)
+            if comp:
+                pri = 1 if a.get_actor_label() == "NightMoonlight" else 0
+                comp.set_editor_property("forward_shading_priority", pri)
+                log("forward_shading_priority=%d on %s" % (pri, a.get_actor_label()))
+
+        # 5) Move the LED volume to the georeferenced hang point.
         for a in actors().get_all_level_actors():
             if a.get_actor_label() == "PrevizVolume":
                 a.set_actor_location(unreal.Vector(0, 0, VOLUME_BASE_Z), False, False)
